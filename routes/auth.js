@@ -35,6 +35,36 @@ router.post('/register', (req, res) => {
   });
 });
 
-router.post('/login', (req, res) => {});
+router.post('/login', (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  User.findOne({ email }).then(user => {
+    if (!user) {
+      errors.email = 'No Account Found';
+      return res.status(404).json(errors);
+    }
+
+    bcrypt.compare(password, user.password).then(isMatch => {
+      if (isMatch) {
+        const payload = {
+          id: user._id,
+          email: user.email
+        };
+
+        jwt.sign(payload, secret, { expiresIn: 36000 }, (err, token) => {
+          if (err) res.status(500).json({ error: 'Error signing token', raw: err });
+          res.json({
+            success: true,
+            token: `Bearer ${token}`
+          });
+        });
+      } else {
+        errors.password = 'Password is incorrect';
+        res.status(400).json(errors);
+      }
+    });
+  });
+});
 
 module.exports = router;
