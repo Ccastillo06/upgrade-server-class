@@ -1,5 +1,4 @@
 const graphql = require('graphql');
-
 const {
   GraphQLObjectType,
   GraphQLID,
@@ -9,42 +8,8 @@ const {
   GraphQLSchema
 } = graphql;
 
-const songs = [
-  {
-    id: '1',
-    name: 'Azukita',
-    genre: 'EDM',
-    year: 2017,
-    authorId: '1'
-  },
-  {
-    id: '2',
-    name: 'Still Waiting',
-    genre: 'Rock',
-    year: 2001
-  },
-  {
-    id: '3',
-    name: 'Highway to Hell',
-    genre: 'Rock',
-    year: 1995
-  },
-  {
-    id: '4',
-    name: 'Steve Aoki Song',
-    genre: 'EDM',
-    year: 2015,
-    authorId: '1'
-  }
-];
-
-const authors = [
-  {
-    id: '1',
-    name: 'Steve Aoki',
-    age: 40
-  }
-];
+const Author = require('../models/Author');
+const Song = require('../models/Song');
 
 const SongType = new GraphQLObjectType({
   name: 'Song',
@@ -57,7 +22,7 @@ const SongType = new GraphQLObjectType({
       type: AuthorType,
       resolve(parent) {
         const { authorId } = parent;
-        return authors.find(({ id }) => id === authorId);
+        return Author.findById(authorId);
       }
     }
   })
@@ -73,11 +38,13 @@ const AuthorType = new GraphQLObjectType({
       type: GraphQLList(SongType),
       resolve(parent) {
         const { id } = parent;
-        return songs.filter(({ authorId }) => authorId === id);
+        return Song.find({ authorId: id });
       }
     }
   })
 });
+
+// 5d0de46779d7a7659c8e9567
 
 // Specific query for the song object type.
 const RootQuery = new GraphQLObjectType({
@@ -90,19 +57,19 @@ const RootQuery = new GraphQLObjectType({
       },
       resolve(parent, args) {
         const { id } = args;
-        return songs.find(({ id: songId }) => songId === id);
+        return Song.findById(id);
       }
     },
     songs: {
       type: GraphQLList(SongType),
       resolve() {
-        return songs;
+        return Song.find();
       }
     },
     authors: {
       type: GraphQLList(AuthorType),
       resolve() {
-        return authors;
+        return Author.find();
       }
     },
     author: {
@@ -112,12 +79,57 @@ const RootQuery = new GraphQLObjectType({
       },
       resolve(parent, args) {
         const { id } = args;
-        return authors.find(({ id: authorId }) => authorId === id);
+        return Author.findById(id);
+      }
+    }
+  }
+});
+
+const Mutation = new GraphQLObjectType({
+  name: 'Mutation',
+  fields: {
+    addAuthor: {
+      type: AuthorType,
+      args: {
+        name: { type: GraphQLString },
+        age: { type: GraphQLInt }
+      },
+      resolve(parent, args) {
+        const { name, age } = args;
+
+        const newAuthor = new Author({
+          name,
+          age
+        });
+
+        return newAuthor.save();
+      }
+    },
+    addSong: {
+      type: SongType,
+      args: {
+        name: { type: GraphQLString },
+        genre: { type: GraphQLString },
+        year: { type: GraphQLInt },
+        authorId: { type: GraphQLID }
+      },
+      resolve(parent, args) {
+        const { name, genre, year, authorId } = args;
+
+        const newSong = new Song({
+          name,
+          genre,
+          year,
+          authorId
+        });
+
+        return newSong.save();
       }
     }
   }
 });
 
 module.exports = new GraphQLSchema({
-  query: RootQuery
+  query: RootQuery,
+  mutation: Mutation
 });
