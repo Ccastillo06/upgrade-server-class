@@ -62,7 +62,8 @@ const RootQuery = new GraphQLObjectType({
     },
     songs: {
       type: GraphQLList(SongType),
-      resolve() {
+      resolve(parent, args, context) {
+        // const { id, email } = context.user;
         return Song.find();
       }
     },

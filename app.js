@@ -25,9 +25,14 @@ app.use('/auth', authRoutes);
 app.use(
   '/graphql',
   passport.authenticate('jwt', { session: false }),
-  graphqlHTTP({
-    schema,
-    graphiql: true
+  graphqlHTTP(req => {
+    return {
+      schema,
+      graphiql: true,
+      context: {
+        user: req.user
+      }
+    };
   })
 );
 
