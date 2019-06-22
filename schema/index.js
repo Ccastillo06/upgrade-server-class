@@ -125,6 +125,17 @@ const Mutation = new GraphQLObjectType({
 
         return newSong.save();
       }
+    },
+    deleteSong: {
+      type: SongType,
+      args: {
+        id: { type: GraphQLID }
+      },
+      resolve(parent, args) {
+        const { id } = args;
+
+        return Song.findByIdAndDelete(id);
+      }
     }
   }
 });
